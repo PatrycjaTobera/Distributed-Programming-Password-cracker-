@@ -1,32 +1,36 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Łamacz haseł\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\Compute_server.csproj": {}
+    "C:\\l\\gitrepo_studia\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\Compute_server.csproj": {}
   },
   "projects": {
-    "E:\\Łamacz haseł\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\Compute_server.csproj": {
+    "C:\\l\\gitrepo_studia\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\Compute_server.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Łamacz haseł\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\Compute_server.csproj",
+        "projectUniqueName": "C:\\l\\gitrepo_studia\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\Compute_server.csproj",
         "projectName": "Compute_server",
-        "projectPath": "E:\\Łamacz haseł\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\Compute_server.csproj",
-        "packagesPath": "C:\\Users\\patry\\.nuget\\packages\\",
-        "outputPath": "E:\\Łamacz haseł\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\obj\\",
+        "projectPath": "C:\\l\\gitrepo_studia\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\Compute_server.csproj",
+        "packagesPath": "C:\\Users\\STUDENTBOX2\\.nuget\\packages\\",
+        "outputPath": "C:\\l\\gitrepo_studia\\Distributed-Programming-Password-cracker-\\Backend\\Compute_server\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\patry\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\STUDENTBOX2\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net7.0"
+          "net8.0"
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net7.0": {
-            "targetAlias": "net7.0",
+          "net8.0": {
+            "targetAlias": "net8.0",
             "projectReferences": {}
           }
         },
@@ -34,11 +38,17 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
-        "net7.0": {
-          "targetAlias": "net7.0",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "dependencies": {
             "Microsoft.AspNetCore.Mvc": {
               "target": "Package",
@@ -55,6 +65,10 @@
             "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": {
               "target": "Package",
               "version": "[1.17.2, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[9.0.3, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
@@ -80,7 +94,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.202\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

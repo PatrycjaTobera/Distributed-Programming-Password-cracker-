@@ -1,7 +1,23 @@
- - "./backend - calculating:/App"
+services:
+  password-cracker-backend-calculating:
+    build:
+      context: "./Backend/Compute_server"
+      dockerfile: Dockerfile
+    volumes:
+      - "./Backend/Compute_server:/App"
+      - "./.env:/App/.env"
+      - "./data:/App/data"
     ports:
       - "5099:5099"
     env_file:
       - .env
+    environment:
+      - PASSWORD_FILE_PATH=/App/data/users_passwords.txt
+      - DOTNET_USE_POLLING_FILE_WATCHER=false
+      - DOTNET_WATCH_SUPPRESS_MSBUILD_INITIATION=true
     networks:
       - password-cracker-network
+
+networks:
+  password-cracker-network:
+    driver: bridge

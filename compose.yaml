@@ -1,4 +1,10 @@
- - "./backend - central:/App"
+services:
+  password-cracker-central-server:
+    build:
+      context: "./Backend/Central_server"
+      dockerfile: Dockerfile
+    volumes:
+      - "./Backend/Central_server:/App"
     ports:
       - "5098:5098"
     depends_on:
@@ -9,6 +15,10 @@
   password-cracker-database:
     image: postgres:15
     restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: password_cracker_db
     env_file:
       - .env
     volumes:
