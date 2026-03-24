@@ -125,6 +125,25 @@
   transform: translateY(0);
 }
 
+.health-check {
+  margin-top: 28px;
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.health-status {
+  margin: 0;
+  font-weight: 600;
+  color: #1845a6;
+}
+
+.health-error {
+  margin: 0;
+  font-weight: 600;
+  color: #b42318;
+}
+
 @media (max-width: 640px) {
   .panel {
     padding: 24px 16px;

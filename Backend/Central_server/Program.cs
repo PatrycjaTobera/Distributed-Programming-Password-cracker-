@@ -9,7 +9,22 @@ namespace Central_server
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            builder.WebHost.UseUrls("http://0.0.0.0:5098");
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("LocalFrontend", policy =>
+                {
+                    policy.WithOrigins("http://localhost:5173")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
+            builder.Services.AddHttpClient("computeServer", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(5);
+            });
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -25,7 +40,7 @@ namespace Central_server
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            app.UseCors("LocalFrontend");
 
             app.UseAuthorization();
 

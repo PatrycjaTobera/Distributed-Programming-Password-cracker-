@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import './App.css'
+import SystemConnectionCheck from './components/system-connection-check'
 
 function App() {
   const [login, setLogin] = useState('')
@@ -57,6 +58,8 @@ function App() {
             Rozpocznij łamanie
           </button>
         </form>
+
+        <SystemConnectionCheck />
       </section>
     </main>
   )
