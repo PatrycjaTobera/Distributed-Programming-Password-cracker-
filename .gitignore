@@ -46,3 +46,15 @@ root
 .vs/
 *.user
 *.suo
+
+*.cache
+*.user
+*.userosscache
+*.sln.docuser
+
+.vs/
+.idea/
+
+project.assets.json
+*.nuget.g.props
+*.nuget.g.targets
