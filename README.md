@@ -31,7 +31,7 @@ npm install && npm run dev
 
 
 # Create configuration files
-## In folder: \Distributed-Programming-Password-cracker-\frontend-client create file .env
+## In folder: \Distributed-Programming-Password-cracker-\ create file .env
 ```bash
 ASPNETCORE_ENVIRONMENT=Development
 ASPNETCORE_URLS=http://+:5099;http://+:5098
