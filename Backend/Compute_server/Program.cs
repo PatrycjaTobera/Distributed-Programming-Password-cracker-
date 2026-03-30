@@ -1,52 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
-namespace Compute_server
+namespace backend___calculating
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            builder.WebHost.UseUrls("http://0.0.0.0:5099");
-
-            builder.Services.AddControllers();
-
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(connectionString));
-
-            var app = builder.Build();
-
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseAuthorization();
-
-            app.MapControllers();
-
-            app.Run();
+            await CreateHostBuilder(args).Build().RunAsync();
         }
-    }
 
-    public class AppDbContext : DbContext
-    {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
-        public DbSet<TestEntity> TestEntities { get; set; }
-    }
-
-    public class TestEntity
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<CalculatingStartup>();
+                    webBuilder.ConfigureKestrel(options =>
+                    {
+                        options.Limits.MaxRequestBodySize = 32212254720;
+                        options.Listen(IPAddress.Parse("0.0.0.0"), 5099);
+                    });
+                });
     }
 }

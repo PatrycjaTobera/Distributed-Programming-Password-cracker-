@@ -1,0 +1,239 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
+using backend___calculating.Services;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using backend___calculating.Interfaces;
+using System.IO;
+using DotNetEnv;
+
+namespace backend___calculating
+{
+    public class CalculatingStartup
+    {
+
+        private IApplicationBuilder? app;
+        private IEnumerable<ILogService>? logServices;
+        public static bool IsDatabaseRunning { get; private set; } = false;
+        public static List<IPAddress> ServersIpAddresses { get; set; } = new List<IPAddress>();
+
+        public IConfiguration Configuration { get; }
+
+        public CalculatingStartup(IConfiguration configuration)
+        {
+            LoadEnvironmentVariables();
+            Configuration = configuration;
+        }
+
+        private static void LoadEnvironmentVariables()
+        {
+            string currentDirectory = Directory.GetCurrentDirectory();
+            string[] envCandidates =
+            {
+                Path.Combine(currentDirectory, ".env"),
+                Path.Combine(currentDirectory, "..", ".env"),
+                Path.Combine(currentDirectory, "..", "..", ".env"),
+                Path.Combine(AppContext.BaseDirectory, ".env"),
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".env"),
+                "/App/.env"
+            };
+
+            foreach (string candidate in envCandidates)
+            {
+                string normalizedPath = Path.GetFullPath(candidate);
+                if (!File.Exists(normalizedPath))
+                {
+                    continue;
+                }
+
+                Env.Load(normalizedPath);
+                return;
+            }
+        }
+
+        private string? ResolvePasswordFilePath(string? configuredPath)
+        {
+            if (!string.IsNullOrWhiteSpace(configuredPath))
+            {
+                string pathToCheck = configuredPath;
+                if (!Path.IsPathRooted(pathToCheck))
+                {
+                    pathToCheck = Path.GetFullPath(pathToCheck, Directory.GetCurrentDirectory());
+                }
+
+                if (File.Exists(pathToCheck))
+                {
+                    return pathToCheck;
+                }
+            }
+
+            string currentDirectory = Directory.GetCurrentDirectory();
+            string[] fallbackCandidates =
+            {
+                Path.Combine(currentDirectory, "data", "users_passwords.txt"),
+                Path.Combine(currentDirectory, "..", "data", "users_passwords.txt"),
+                Path.Combine(currentDirectory, "..", "..", "data", "users_passwords.txt"),
+                "/App/data/users_passwords.txt"
+            };
+
+            foreach (string candidate in fallbackCandidates)
+            {
+                string normalizedPath = Path.GetFullPath(candidate);
+                if (File.Exists(normalizedPath))
+                {
+                    return normalizedPath;
+                }
+            }
+
+            return null;
+        }
+
+        public async void Configure(IApplicationBuilder app, IEnumerable<ILogService> logServices)
+        {
+            this.app = app;
+            this.logServices = logServices;
+            ConfigureApp(app);
+            await Task.Run(() => TestConnectionWithDatabase());
+        }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            if (services != null)
+            {
+                ConfigureCors(services);
+                services.AddSingleton<ILogService, InfoLogService>();
+                services.AddSingleton<ILogService, ErrorLogService>();
+                services.AddSingleton<IPasswordRepository, FilePasswordRepository>();
+                services.AddScoped<CheckService>();
+                services.AddScoped<DictionaryService>();
+                services.AddScoped<ICheckService, CheckService>();
+                services.AddScoped<IBruteForceService, BruteForceService>();
+                services.AddScoped<IDictionaryService, DictionaryService>();
+                services.AddControllers();
+            }
+        }
+
+        private void ConfigureApp(IApplicationBuilder app)
+        {
+            app.UseCors("AllowedOrigins");
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+            LogCalculatingServerInfo("Calculating web server started");
+        }
+
+        private static void ConfigureCors(IServiceCollection services)
+        {
+            services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 32212254720;
+            });
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowedOrigins", policy =>
+                    policy.SetIsOriginAllowed(origin =>
+                    {
+                        Uri uri = new(origin);
+                        return uri.Port == 5098;
+                    })
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                );
+            });
+        }
+
+        private void LogCalculatingServerInfo(string message)
+        {
+            ILogService? infoLogService = logServices?.FirstOrDefault(logService => logService is InfoLogService);
+            infoLogService?.LogMessage(message);
+        }
+
+        private void LogCalculatingServerError(string message)
+        {
+            ILogService? errorLogService = logServices?.FirstOrDefault(logService => logService is ErrorLogService);
+            errorLogService?.LogMessage($"An error occurred: {message}");
+        }
+
+        private async Task TestConnectionWithDatabase()
+        {
+            try
+            {
+                string? configuredPath = Environment.GetEnvironmentVariable("PASSWORD_FILE_PATH");
+                string? filePath = ResolvePasswordFilePath(configuredPath);
+                bool isFilePathValid = !string.IsNullOrEmpty(filePath);
+                if (isFilePathValid)
+                {
+                    if (File.Exists(filePath))
+                    {
+                        LogCalculatingServerInfo($"Successfully found password file at {filePath}");
+                        IsDatabaseRunning = true;
+                        await ConnectWithCentralServer();
+                        return;
+                    }
+                    throw new FileNotFoundException($"Password file not found: {filePath}");
+                }
+                throw new Exception("Password file path is null or empty");
+            }
+            catch (Exception ex)
+            {
+                IsDatabaseRunning = false;
+                LogCalculatingServerError($"File connection test exception {ex.Message}");
+                StopCalculatingServer();
+            }
+        }
+
+        private async Task ConnectWithCentralServer()
+        {
+            try
+            {
+                LoadEnvironmentVariables();
+                string? centralServerIp = Env.GetString("CENTRAL_SERVER_IP");
+                string? calculatingServerIp = Env.GetString("CALCULATING_SERVER_IP");
+                if (string.IsNullOrEmpty(centralServerIp))
+                {
+                    throw new Exception("CENTRAL_SERVER_IP is not set in the .env file");
+                }
+                if (string.IsNullOrEmpty(calculatingServerIp))
+                {
+                    throw new Exception("CALCULATING_SERVER_IP is not set in the .env file");
+                }
+                using HttpClient httpClient = new();
+                httpClient.Timeout = TimeSpan.FromSeconds(300);
+                string centralServerUri = $"http://{centralServerIp}:5098/api/calculating-server/connect";
+                using MultipartFormDataContent formData = new()
+                {
+                    { new StringContent(calculatingServerIp), "IpAddress" }
+                };
+                HttpResponseMessage httpResponseMessage = await httpClient.PostAsync(centralServerUri, formData);
+                if (!httpResponseMessage.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Cannot connect to central server with address {centralServerIp}. Status code: {httpResponseMessage.StatusCode}");
+                }
+                LogCalculatingServerInfo("Successfully connected to central server");
+            }
+            catch (Exception ex)
+            {
+                LogCalculatingServerError($"Error to connect to central server: {ex}");
+                StopCalculatingServer();
+            }
+        }
+
+        private void StopCalculatingServer()
+        {
+            if (app != null)
+            {
+                LogCalculatingServerInfo("Stopped calculating server");
+                IHostApplicationLifetime lifetime = app.ApplicationServices.GetRequiredService<IHostApplicationLifetime>();
+                lifetime.StopApplication();
+            }
+        }
+    }
+}

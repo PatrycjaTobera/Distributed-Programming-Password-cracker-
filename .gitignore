@@ -58,3 +58,4 @@ root
 project.assets.json
 *.nuget.g.props
 *.nuget.g.targets
+*.txt
