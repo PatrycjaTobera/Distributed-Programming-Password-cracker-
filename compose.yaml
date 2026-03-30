@@ -1,3 +1,4 @@
+version: "2.4"
 services:
   password-cracker-central-server:
     build:
@@ -5,12 +6,27 @@ services:
       dockerfile: Dockerfile
     volumes:
       - "./Backend/Central_server:/App"
+      - "./data/init_users.sql:/app/data/init_users.sql:ro"
+    environment:
+      INIT_USERS_SQL_PATH: /app/data/init_users.sql
+      INIT_DB_CONNECTION_STRING: Host=password-cracker-database;Port=5432;Database=password_cracker_db;Username=postgres;Password=password
     ports:
       - "5098:5098"
     depends_on:
       - password-cracker-database
     networks:
       - password-cracker-network
+
+  init-db:
+    image: python:3.11-slim
+    volumes:
+      - ./:/workdir
+      - db_init:/init_db
+    working_dir: /workdir
+    command: ["python", "generate_users_sql.py", "--out", "/init_db/init_users.sql"]
+    networks:
+      - password-cracker-network
+    restart: "no"
 
   password-cracker-database:
     image: postgres:15
@@ -23,6 +39,10 @@ services:
       - .env
     volumes:
       - db_data:/var/lib/postgresql/data
+      - db_init:/docker-entrypoint-initdb.d
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
     networks:
       - password-cracker-network
     ports:
@@ -34,3 +54,4 @@ networks:
 
 volumes:
   db_data:
+  db_init:
