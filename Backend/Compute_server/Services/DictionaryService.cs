@@ -67,26 +67,40 @@ namespace backend___calculating.Services
         public async Task<ActionResult> StartCrackingResult(HttpContext httpContext)
         {
             DateTime startTime = DateTime.UtcNow;
+            string username = "unknown";
+            int? chunkStartLine = null;
+            int? chunkEndLine = null;
             try
             {
-                var (username, chunkInfo) = await ReadAndDeserializeRequest(httpContext);
+                var (requestUsername, chunkInfo) = await ReadAndDeserializeRequest(httpContext);
+                username = requestUsername;
+                chunkStartLine = chunkInfo.StartLine;
+                chunkEndLine = chunkInfo.EndLine;
                 List<string> selectedPasswords = await ReadPasswordsFromDictionary(chunkInfo);
                 ValidateSelectedPasswords(selectedPasswords, chunkInfo);
                 await CheckPasswordsAgainstDatabase(selectedPasswords, username);
                 LogSuccessfulPasswordLoading(selectedPasswords, chunkInfo);
                 DateTime endTime = DateTime.UtcNow;
                 int processingTime = (int)(endTime - startTime).TotalMilliseconds;
+                ILogService.LogInfo(logServices,
+                    $"Cracking result for user: {username} with chunk: {chunkInfo.StartLine}-{chunkInfo.EndLine} -> Password not found! ({processingTime} ms)");
                 return JsonSuccessResponse("Password not found!", processingTime);
             }
             catch (Exception ex)
             {
                 DateTime endTime = DateTime.UtcNow;
                 int processingTime = (int)(endTime - startTime).TotalMilliseconds;
+                string chunkRange = chunkStartLine.HasValue && chunkEndLine.HasValue
+                    ? $"{chunkStartLine.Value}-{chunkEndLine.Value}"
+                    : "unknown";
                 if (ex.Message.Contains("Password found!"))
                 {
+                    ILogService.LogInfo(logServices,
+                        $"Cracking result for user: {username} with chunk: {chunkRange} -> {ex.Message} ({processingTime} ms)");
                     return JsonSuccessResponse(ex.Message, processingTime);
                 }
-                ILogService.LogError(logServices, $"Error while cracking using dictionary: {ex.Message}");
+                ILogService.LogError(logServices,
+                    $"Error while cracking using dictionary for user: {username} with chunk: {chunkRange}: {ex.Message} ({processingTime} ms)");
                 return JsonErrorResponse(ex.Message, processingTime);
             }
         }
@@ -137,8 +151,8 @@ namespace backend___calculating.Services
                 }
                 checkedPasswords++;
                 string hashedPassword = CalculateMD5Hash(password);
-                ILogService.LogInfo(logServices,
-                    $"Checking password [{checkedPasswords}/{totalPasswords}]: '{password}' (MD5: {hashedPassword})");
+                // ILogService.LogInfo(logServices,
+                //     $"Checking password [{checkedPasswords}/{totalPasswords}]: '{password}' (MD5: {hashedPassword})");
                 bool isMatch = await _passwordRepository.CheckPassword(username, hashedPassword);
                 if (isMatch)
                 {
@@ -179,7 +193,8 @@ namespace backend___calculating.Services
                     ?? throw new Exception("Invalid username format");
                 ChunkInfo chunkInfo = JsonSerializer.Deserialize<ChunkInfo>(chunkElement.GetRawText())
                     ?? throw new Exception("Invalid chunk information format");
-                ILogService.LogInfo(logServices, $"Received request for user: {username} with chunk: {chunkInfo.StartLine}-{chunkInfo.EndLine}");
+                 ILogService.LogInfo(logServices, $"Received request for user: {username} with chunk: {chunkInfo.StartLine}-{chunkInfo.EndLine}");
+                ////----
                 return (username, chunkInfo);
             }
             catch (JsonException ex)
@@ -203,7 +218,7 @@ namespace backend___calculating.Services
             using StreamReader streamReader = new(fileStream);
             await SkipLinesToStartPosition(streamReader, chunkInfo.StartLine);
             await ReadRequiredLines(streamReader, selectedPasswords, chunkInfo);
-            ILogService.LogInfo(logServices, "Started cracking password ussing dictionary pack");
+            // ILogService.LogInfo(logServices, "Started cracking password using dictionary pack");
             return selectedPasswords;
         }
 
@@ -237,8 +252,8 @@ namespace backend___calculating.Services
 
         private void LogSuccessfulPasswordLoading(List<string> selectedPasswords, ChunkInfo chunkInfo)
         {
-            ILogService.LogInfo(logServices,
-                $"Successfully loaded {selectedPasswords.Count} words from dictionary (lines {chunkInfo.StartLine}-{chunkInfo.EndLine})");
+            // ILogService.LogInfo(logServices,
+            //     $"Successfully loaded {selectedPasswords.Count} words from dictionary (lines {chunkInfo.StartLine}-{chunkInfo.EndLine})");
         }
 
         private async Task<string> HandleSaveFile(IFormFile? iFormFile)
