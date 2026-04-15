@@ -34,7 +34,6 @@ build/
 
 ### Environment ###
 .env.dev
-.env
 
 root
 
@@ -58,4 +57,3 @@ root
 project.assets.json
 *.nuget.g.props
 *.nuget.g.targets
-*.txt
