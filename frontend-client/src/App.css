@@ -132,19 +132,42 @@
   box-shadow: 0 6px 14px rgba(47, 111, 236, 0.22);
 }
 
-.request-success,
-.request-error {
+.request-summary {
   margin: 0;
-  font-weight: 600;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  display: grid;
+  gap: 8px;
   text-align: left;
 }
 
-.request-success {
-  color: #1d4ed8;
+.request-summary.success {
+  border-color: #bfdbfe;
+  background: #eff6ff;
 }
 
-.request-error {
+.request-summary.error {
+  border-color: #f3c4bf;
+  background: #fff4f2;
+}
+
+.request-summary-title {
+  margin: 0;
+  font-weight: 700;
+  color: #1f2a37;
+}
+
+.request-summary-content {
+  margin: 0;
+  font-weight: 600;
   color: #b42318;
+  white-space: pre-line;
+}
+
+.request-summary.success .request-summary-content {
+  color: #1d4ed8;
 }
 
 .health-check {
