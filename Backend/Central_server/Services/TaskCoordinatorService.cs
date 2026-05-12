@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -14,6 +15,7 @@ namespace backend___central.Services
     public class TaskCoordinatorService
     {
         public static PasswordInfo? LastFoundPassword { get; private set; }
+        public static ConcurrentDictionary<string, int> AccumulatedServerTimes { get; private set; } = new();
         private volatile bool passwordFound;
         private HashSet<IPAddress> failedServers;
         private readonly IEnumerable<ILogService> logServices;
@@ -158,6 +160,8 @@ namespace backend___central.Services
                     $"[Dictionary] Central: Total = {totalCentralExecutionTime} ms" +
                     (calculatingServerTime > 0 ? $" | Calculating: ({server.IpAddress}) Total = {calculatingServerTime} ms" : "") +
                     $" | Communication time = {finalTime} ms");
+                if (calculatingServerTime > 0)
+                    AccumulatedServerTimes.AddOrUpdate(server.IpAddress.ToString(), calculatingServerTime, (_, existing) => existing + calculatingServerTime);
                 ILogService.LogInfo(logServices, $"Password found by server {server.IpAddress}: {responseContent}");
                 LastFoundPassword = new PasswordInfo
                 {
@@ -242,6 +246,8 @@ namespace backend___central.Services
                 $"[Dictionary] Central: Total = {totalCentralExecutionTime} ms" +
                 (calculatingServerTime > 0 ? $" | Calculating: ({server.IpAddress}) Total = {calculatingServerTime} ms" : "") +
                 $" | Communication time = {finalTime} ms");
+            if (calculatingServerTime > 0)
+                AccumulatedServerTimes.AddOrUpdate(server.IpAddress.ToString(), calculatingServerTime, (_, existing) => existing + calculatingServerTime);
             // ILogService.LogInfo(logServices, $"Server {server.IpAddress} completed chunk processing: {responseContent}");
             PerformanceMetricsLogger.LogDictionaryChunkMetrics(
                 logServices,
@@ -271,12 +277,18 @@ namespace backend___central.Services
             }
         }
 
+        public static void ResetAccumulatedServerTimes()
+        {
+            AccumulatedServerTimes = new ConcurrentDictionary<string, int>();
+        }
+
         public void ResetState()
         {
             processingTasks = new Dictionary<CalculatingServerState, Task>();
             taskCompletionSources = new Dictionary<CalculatingServerState, TaskCompletionSource<bool>>();
             failedServers = new HashSet<IPAddress>();
             passwordFound = false;
+            LastFoundPassword = null;
         }
 
         private static async Task<HttpResponseMessage> SendRequestToCalculatingServer(HttpClient httpClient, IPAddress serverIp, StringContent content)

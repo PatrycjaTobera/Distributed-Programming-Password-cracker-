@@ -35,6 +35,7 @@ namespace backend___central.Services
         public async Task<IActionResult> HandleDictionaryCracking(HttpContext httpContext)
         {
             DateTime startTime = DateTime.UtcNow;
+            TaskCoordinatorService.ResetAccumulatedServerTimes();
             try
             {
                 passwordFound = false;
@@ -47,14 +48,15 @@ namespace backend___central.Services
                 currentLine = await ProcessDictionaryWithServers(currentLine, totalLines, username, serverStates);
                 int totalTime = (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
                 ILogService.LogInfo(logServices, $"Dictionary processing completed. passwordFound={passwordFound}, LastFoundPassword={(TaskCoordinatorService.LastFoundPassword != null ? "available" : "null")}");
+                var serversTimes = new Dictionary<string, int>(TaskCoordinatorService.AccumulatedServerTimes);
                 if (passwordFound && TaskCoordinatorService.LastFoundPassword != null)
                 {
                     PasswordInfo? passwordInfo = TaskCoordinatorService.LastFoundPassword;
                     ILogService.LogInfo(logServices, $"Found password: {passwordInfo.Value} from server {passwordInfo.ServerIp}, returning success response");
-                    return responseProcessingService.ProcessDictionaryResult(true, passwordInfo);
+                    return responseProcessingService.ProcessDictionaryResult(true, passwordInfo, totalTime, serversTimes);
                 }
                 ILogService.LogInfo(logServices, "No password found, returning not found response");
-                return responseProcessingService.ProcessDictionaryResult(false, null);
+                return responseProcessingService.ProcessDictionaryResult(false, null, totalTime, serversTimes);
             }
             catch (Exception ex)
             {

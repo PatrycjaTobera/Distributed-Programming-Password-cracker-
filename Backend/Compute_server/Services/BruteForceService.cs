@@ -207,6 +207,7 @@ namespace backend___calculating.Services
 
                 combinationCount++;
                 string combination = IndexToCombination(i, chars, passwordLength);
+                ILogService.LogInfo(logServices, $"Trying: {combination}");
                 string computedHash = CalculateMD5Hash(combination);
                 if (computedHash == targetHash)
                 {

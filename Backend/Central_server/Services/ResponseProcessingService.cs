@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using backend___central.Models;
 using backend___central.Interfaces;
+using System.Text.Json;
 
 namespace backend___central.Services
 {
@@ -118,34 +119,45 @@ namespace backend___central.Services
             };
         }
 
-        public IActionResult ProcessDictionaryResult(bool passwordFound, PasswordInfo? passwordInfo = null)
+        public IActionResult ProcessDictionaryResult(bool passwordFound, PasswordInfo? passwordInfo, int totalTime, Dictionary<string, int> serversTimes)
         {
             ILogService.LogInfo(logServices, $"ProcessDictionaryResult called with: passwordFound={passwordFound}, passwordInfo={(passwordInfo != null ? $"value={passwordInfo.Value}" : "null")}");
-            
+
+            var serversTimesList = serversTimes
+                .Select(kv => new { Server = kv.Key, Time = kv.Value })
+                .ToList();
+            int avgServerTime = serversTimesList.Any() ? (int)serversTimesList.Average(s => s.Time) : 0;
+            int communicationTime = totalTime - avgServerTime;
+
             if (passwordFound && passwordInfo != null)
             {
                 ILogService.LogInfo(logServices, $"Returning dictionary success response with password: {passwordInfo.Value}");
-                JsonResult response = new (new
+                JsonResult response = new(new
                 {
                     Message = "Password found!",
                     Password = passwordInfo.Value,
                     Server = passwordInfo.ServerIp,
-                    Time = passwordInfo.ServerTime,
-                    passwordInfo.TotalTime,
-                    Status = "Found"
+                    ServerExecutionTime = passwordInfo.ServerTime,
+                    TotalExecutionTime = totalTime,
+                    CommunicationTime = communicationTime,
+                    ServersTimes = serversTimesList
                 })
                 {
                     StatusCode = 200,
                     ContentType = "application/json"
                 };
-                ILogService.LogInfo(logServices, $"Response JSON: {System.Text.Json.JsonSerializer.Serialize(response.Value)}");
+                ILogService.LogInfo(logServices, $"Response JSON: {JsonSerializer.Serialize(response.Value)}");
                 return response;
             }
+
             ILogService.LogInfo(logServices, "Returning dictionary not found response");
             return new JsonResult(new
             {
                 Message = "Password not found in dictionary.",
-                Status = "NotFound",
+                TotalExecutionTime = totalTime,
+                AverageServerTime = avgServerTime,
+                CommunicationTime = communicationTime,
+                ServersTimes = serversTimesList
             })
             {
                 StatusCode = 200,

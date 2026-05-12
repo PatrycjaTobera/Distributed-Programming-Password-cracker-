@@ -4,13 +4,13 @@ namespace backend___central.Models
 {
     public class BruteForceResponse
     {
-        [JsonPropertyName("Message")]
+        [JsonPropertyName("message")]
         public string Message { get; set; } = string.Empty;
 
-        [JsonPropertyName("Password")]
+        [JsonPropertyName("password")]
         public string? Password { get; set; }
 
-        [JsonPropertyName("Time")]
+        [JsonPropertyName("time")]
         public int Time { get; set; }
     }
 }

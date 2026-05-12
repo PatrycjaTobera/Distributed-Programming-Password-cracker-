@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import './App.css'
-import SystemConnectionCheck from './components/system-connection-check'
 
 type CrackingMethod = 'Słownikowa' | 'Brute-force'
 
@@ -170,6 +169,20 @@ const formatErrorMessage = (payload: unknown, status: number): string => {
   return formattedMessage
 }
 
+const formatSuccessMessage = (payload: unknown): string | null => {
+  const message = getResponseMessage(payload)
+  if (!message) {
+    return null
+  }
+
+  const details = formatResponseDetails(payload)
+  if (!details) {
+    return message
+  }
+
+  return `${message}\n${details}\n${CSV_RESULTS_NOTE}`
+}
+
 function App() {
   const [login, setLogin] = useState('')
   const [method, setMethod] = useState<CrackingMethod>('Słownikowa')
@@ -213,7 +226,7 @@ function App() {
       throw new HttpResponseError(formatErrorMessage(parsed, response.status), response.status)
     }
 
-    const message = getResponseMessage(parsed)
+    const message = formatSuccessMessage(parsed)
     if (!message) {
       throw new Error('Serwer zwrócił nieprawidłową odpowiedź dla brute-force.')
     }
@@ -256,7 +269,7 @@ function App() {
       throw new HttpResponseError(formatErrorMessage(parsed, response.status), response.status)
     }
 
-    const message = getResponseMessage(parsed)
+    const message = formatSuccessMessage(parsed)
     if (!message) {
       throw new Error('Serwer zwrócił nieprawidłową odpowiedź dla metody słownikowej.')
     }
@@ -401,7 +414,6 @@ function App() {
           )}
         </form>
 
-        <SystemConnectionCheck />
       </section>
     </main>
   )

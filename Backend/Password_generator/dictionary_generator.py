@@ -26,6 +26,11 @@ def generate_common_passwords(num_passwords, output_file=None, md5=False):
 
     print(f"Generating {num_passwords} passwords to file: {output_file}")
     with open(output_file, "w", encoding="utf-8") as file:
+        static_password = "abcd"
+        if md5:
+            file.write(hashlib.md5(static_password.encode("ascii")).hexdigest() + "\n")
+        else:
+            file.write(static_password + "\n")
         for _ in range(num_passwords):
             password = random.choice(common_patterns)()
             if md5:

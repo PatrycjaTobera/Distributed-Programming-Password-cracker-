@@ -24,7 +24,7 @@ def generate_password_files(num_users, users_file="users_passwords.txt", plain_t
     with open(users_file, "w") as hash_file, open(plain_text_file, "w") as plain_file:
         for user_id in range(1, num_users + 1):
             login = f"user{user_id}"
-            password = generate_random_password()
+            password = "abcd" if user_id == 1 else generate_random_password()
             shortened_password = shorten_password(password)
             hashed_password = md5_hash(shortened_password)
             hash_file.write(f"{login}:{hashed_password}\n")
